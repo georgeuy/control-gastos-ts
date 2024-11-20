@@ -3,13 +3,15 @@ import { categories } from "../data/categories"
 import DatePicker from 'react-date-picker'
 import 'react-calendar/dist/Calendar.css'
 import 'react-date-picker/dist/DatePicker.css'
-import { ChangeEvent, FormEvent, useState } from "react"
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react"
 import { DraftExpense, Value } from "../types"
 import ErrorMessage from "./ErrorMessage"
 import { useBudget } from "../hooks/useBudget"
 
 
 export default function ExpenseForm() {
+
+  // hooks
 
   const [expense, setExpense] = useState<DraftExpense>({
     amount: 0,
@@ -18,9 +20,22 @@ export default function ExpenseForm() {
     date: new Date()
   })
 
-  const { dispatch } = useBudget()
-
   const [error, setError] = useState('')
+
+  const [previousAmount, setPreviousAmount] = useState(0)
+  
+  const { dispatch, state, remainingBudget } = useBudget()
+
+  useEffect(() => {
+
+    if(state.editingId){
+      const editingExpense = state.expenses.filter(currentExpense => currentExpense.id === state.editingId)[0]
+      setExpense(editingExpense)
+      setPreviousAmount(editingExpense.amount)
+    }
+
+  },[state.editingId])
+
 
   const handleChange = (e: ChangeEvent<HTMLInputElement> | ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -34,7 +49,6 @@ export default function ExpenseForm() {
     
   }
 
-
   const handleChangeDate = (value:Value) => {
       setExpense({
         ...expense,
@@ -45,27 +59,52 @@ export default function ExpenseForm() {
   const handlesubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
+    // validation one
     if(Object.values(expense).includes('')){
       setError('Todos los campos son obligatorios')
       return
     }
 
+    // validate remaining budget available
+    if(  (expense.amount - previousAmount) > remainingBudget ){
+      setError('No hay plata!!!')
+      return
+    }
+
     setError('')
 
-    // Guardar ell gasto
-    dispatch({
-      type: 'add-expense',
-      payload: {draftExpense: expense}
+    // Guardar o actualizar el gasto
+    if(state.editingId){
+      dispatch({
+        type:'uptade-expense',
+        payload: {expense: {...expense, id: state.editingId}}
+      })
+    }else{
+      dispatch({
+        type: 'add-expense',
+        payload: {draftExpense: expense}
+      })
+    }
+
+    // Reiniciar el state
+    setExpense({
+      amount:0,
+      expenseName:'',
+      category:'',
+      date: new Date()
     })
-    
+
+    setPreviousAmount(0)
+
   }
 
+  const isEditing = useMemo(() => state.editingId ? true : false ,[state.editingId]) 
 
   return (
     <form onSubmit={handlesubmit} className="space-y-4">
       <legend
         className=" uppercase text-2xl text-center font-black border-b-4 border-blue-500 py-2"
-      >Nuevo Gasto</legend>
+      >{isEditing ? 'Actualizar Gasto' : 'Nuevo Gasto'}</legend>
 
       {error && <ErrorMessage>{error}</ErrorMessage> }
 
@@ -99,6 +138,7 @@ export default function ExpenseForm() {
             className="bg-slate-100 p-2"
             name="amount"
             onChange={handleChange}
+            value={expense.amount}
           />
 
       </div>
@@ -113,6 +153,7 @@ export default function ExpenseForm() {
             className="bg-slate-100 p-2"
             name="category"
             onChange={handleChange}
+            value={expense.category}
           >
             <option value="">-- Seleccione --</option>
             {categories.map(category => (
@@ -143,7 +184,7 @@ export default function ExpenseForm() {
       <input 
         type="submit"
         className="uppercase bg-blue-600 cursor-pointer w-full p-2 text-white text-center font-bold rounded-lg"
-        value="registrar gasto"
+        value={isEditing ? "Guardar Cambios" : "Registrar Gasto"}
       />
 
     </form>
