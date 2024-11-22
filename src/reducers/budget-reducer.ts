@@ -1,4 +1,4 @@
-import { DraftExpense, Expense } from "../types"
+import { Category, DraftExpense, Expense } from "../types"
 import {v4 as uuidv4} from 'uuid'
 
 // actions
@@ -9,7 +9,9 @@ export type BudgetActions =
 { type: 'add-expense', payload:{draftExpense: DraftExpense}} |
 { type: 'remove-expense', payload:{ id:Expense['id']}} |
 { type: 'get-expense-by-id', payload: {id: Expense['id']}} |
-{ type: 'uptade-expense', payload: {expense: Expense}}
+{ type: 'uptade-expense', payload: {expense: Expense}} |
+{ type: 'restart-app'} |
+{ type: 'add-filter-category', payload:{ id: Category['id'] } }
 
 
 //state
@@ -17,7 +19,8 @@ export type BudgetState = {
     budget: number
     modal: boolean
     expenses: Expense[],
-    editingId: Expense['id']
+    editingId: Expense['id'],
+    currentCategory: Category['id']
 }
 
 const initialBudget = (): number => { 
@@ -35,7 +38,8 @@ export const initialState: BudgetState = {
     budget: initialBudget(),
     modal:false,
     expenses: initialExpenses(),
-    editingId: ""
+    editingId: "",
+    currentCategory: ""
 }
 
 const createExpense = (draftExpense: DraftExpense) : Expense => {
@@ -54,64 +58,82 @@ export const budgetReducer = (
 ) => {
 
     if(action.type === 'add-budget'){
-
-        return {
+        const newState:BudgetState = {
             ...state,
             budget: action.payload.budget
         }
-
+        return newState
     }
 
     if(action.type === 'show-modal'){
-
-        return {
+        const newState:BudgetState = {
             ...state,
             modal: true
         }
+        return newState
     }
 
     if(action.type === 'close-modal'){
-
-        return {
+        const newState:BudgetState = {
             ...state,
-            editingId: '',
+            editingId: "",
             modal: false
 
         }
+        return newState
     }
 
     if(action.type === 'add-expense'){
-
-        return {
+        const newState:BudgetState = {
             ...state,
             expenses: [...state.expenses, createExpense(action.payload.draftExpense)],
             modal: false
         }
+        return newState
     }
 
     if(action.type === 'remove-expense'){
-
-        return {
+        const newState:BudgetState = {
             ...state,
             expenses: state.expenses.filter(expense => expense.id !== action.payload.id)
         }
+        return newState
     }
 
     if(action.type === 'get-expense-by-id'){
-        return {
+        const newState:BudgetState = {
             ...state,
             editingId: action.payload.id,
             modal: true
         }
+        return newState
     }
 
     if( action.type === 'uptade-expense'){
-        return{
+        const newState:BudgetState ={
             ...state,
             expenses: state.expenses.map(expense => expense.id === action.payload.expense.id ? action.payload.expense : expense ),
-            editingId: '',
+            editingId: "",
             modal: false
         }
+        return newState
+    }
+
+    if(action.type === 'restart-app'){
+        const newState:BudgetState = {
+            ...state,
+            budget: 0,
+            expenses: []
+        }
+        return newState
+    }
+
+    if(action.type === 'add-filter-category'){
+        const newState:BudgetState = {
+            ...state,
+            currentCategory: action.payload.id
+        }
+        return newState
     }
 
     return state

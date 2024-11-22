@@ -50,7 +50,7 @@ export default function ExpenseDetail({expense}: ExpenseDetailProps) {
          leadingActions={leadingActions()}
          trailingActions={trailingActions()}
         >
-            <div className="mb-2 bg-white shadow-lg p-10 w-full border-b border-gray-200 flex items-center gap-5">
+            <div className="mb-2 bg-white shadow rounded-lg p-5 w-full border-b border-gray-200 flex items-center gap-5">
                 <div>
                     <img 
                         src={`/icono_${categoryInfo.icon}.svg`}
